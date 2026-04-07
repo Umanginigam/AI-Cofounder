@@ -1,0 +1,15 @@
+# Render.com Blueprint — deploy the FastAPI backend for free
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: cofounder-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -e ".[api]"
+    startCommand: uvicorn src.api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.11.8"
