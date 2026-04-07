@@ -50,3 +50,44 @@ def mark_commitment_dropped(commitment_id: int):
 
 def reverse_decision(decision_id: int):
     store.update_decision_status(decision_id, "reversed")
+
+
+# ---------------------------------------------------------------------------
+# Assumptions
+# ---------------------------------------------------------------------------
+
+def get_assumptions_display(status: str | None = None) -> list[dict]:
+    assumptions = store.get_assumptions(status=status)
+    display = []
+    for a in assumptions:
+        display.append({
+            "id": a["id"],
+            "assumption": a["assumption"],
+            "category": a.get("category", "general"),
+            "status": a.get("status", "untested"),
+            "evidence": a.get("evidence"),
+            "tested_at": a.get("tested_at"),
+            "date": a.get("created_at", "unknown"),
+        })
+    return display
+
+
+def confirm_assumption(assumption_id: int, evidence: str):
+    store.update_assumption_status(assumption_id, "confirmed", evidence)
+
+
+def bust_assumption(assumption_id: int, evidence: str):
+    store.update_assumption_status(assumption_id, "busted", evidence)
+
+
+def get_stale_assumptions_display(days: int = 30) -> list[dict]:
+    stale = store.get_stale_assumptions(days=days)
+    display = []
+    for a in stale:
+        display.append({
+            "id": a["id"],
+            "assumption": a["assumption"],
+            "category": a.get("category", "general"),
+            "date": a.get("created_at", "unknown"),
+        })
+    return display

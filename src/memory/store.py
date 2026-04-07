@@ -88,6 +88,17 @@ def _init_tables(conn: sqlite3.Connection):
             resolved        INTEGER DEFAULT 0,
             created_at      TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS assumptions (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id  INTEGER REFERENCES sessions(id),
+            assumption  TEXT NOT NULL,
+            category    TEXT DEFAULT 'general',
+            status      TEXT DEFAULT 'untested',
+            evidence    TEXT,
+            tested_at   TEXT,
+            created_at  TEXT
+        );
     """)
     conn.commit()
 
@@ -333,3 +344,69 @@ def has_onboarded() -> bool:
     conn = _get_conn()
     row = conn.execute("SELECT COUNT(*) FROM startup_context").fetchone()
     return row[0] > 0
+
+
+# ---------------------------------------------------------------------------
+# Assumptions
+# ---------------------------------------------------------------------------
+
+def add_assumption(
+    session_id: int,
+    assumption: str,
+    category: str = "general",
+) -> int:
+    conn = _get_conn()
+    cur = conn.execute(
+        "INSERT INTO assumptions (session_id, assumption, category, created_at) "
+        "VALUES (?, ?, ?, ?)",
+        (session_id, assumption, category, _now()),
+    )
+    conn.commit()
+    return cur.lastrowid
+
+
+def get_assumptions(status: str | None = None) -> list[dict]:
+    conn = _get_conn()
+    if status:
+        rows = conn.execute(
+            "SELECT * FROM assumptions WHERE status = ? ORDER BY id DESC",
+            (status,),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM assumptions ORDER BY id DESC"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def update_assumption_status(
+    assumption_id: int,
+    status: str,
+    evidence: str | None = None,
+):
+    conn = _get_conn()
+    now = _now()
+    if evidence is not None:
+        conn.execute(
+            "UPDATE assumptions SET status = ?, evidence = ?, tested_at = ? WHERE id = ?",
+            (status, evidence, now, assumption_id),
+        )
+    else:
+        conn.execute(
+            "UPDATE assumptions SET status = ?, tested_at = ? WHERE id = ?",
+            (status, now, assumption_id),
+        )
+    conn.commit()
+
+
+def get_stale_assumptions(days: int = 30) -> list[dict]:
+    """Get untested assumptions older than N days."""
+    conn = _get_conn()
+    rows = conn.execute(
+        "SELECT * FROM assumptions "
+        "WHERE status = 'untested' "
+        "AND created_at <= datetime('now', ?)"
+        "ORDER BY created_at ASC",
+        (f"-{days} days",),
+    ).fetchall()
+    return [dict(r) for r in rows]

@@ -27,6 +27,7 @@ export default function RootLayout({
               <NavLink href="/call">Call</NavLink>
               <NavLink href="/decisions">Decisions</NavLink>
               <NavLink href="/commitments">Commitments</NavLink>
+              <NavLink href="/assumptions">Assumptions</NavLink>
               <NavLink href="/history">Call History</NavLink>
               <div className="mt-auto">
                 <NavLink href="/onboard">Onboard</NavLink>

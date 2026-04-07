@@ -168,6 +168,46 @@ def get_contradictions():
 
 
 # ---------------------------------------------------------------------------
+# Assumptions (Assumption Graveyard)
+# ---------------------------------------------------------------------------
+
+class UpdateAssumptionRequest(BaseModel):
+    status: str
+    evidence: Optional[str] = None
+
+
+@router.get("/assumptions")
+def get_assumptions(status: Optional[str] = None):
+    return {"assumptions": tracker.get_assumptions_display(status=status)}
+
+
+@router.get("/assumptions/stale")
+def get_stale_assumptions(days: int = 30):
+    return {"assumptions": tracker.get_stale_assumptions_display(days=days)}
+
+
+@router.post("/assumptions/{assumption_id}/confirm")
+def confirm_assumption(assumption_id: int, req: UpdateAssumptionRequest):
+    tracker.confirm_assumption(assumption_id, req.evidence or "")
+    return {"status": "confirmed"}
+
+
+@router.post("/assumptions/{assumption_id}/bust")
+def bust_assumption(assumption_id: int, req: UpdateAssumptionRequest):
+    tracker.bust_assumption(assumption_id, req.evidence or "")
+    return {"status": "busted"}
+
+
+# ---------------------------------------------------------------------------
+# Monday Morning Briefing
+# ---------------------------------------------------------------------------
+
+@router.get("/briefing")
+def get_briefing():
+    return knowledge.generate_briefing()
+
+
+# ---------------------------------------------------------------------------
 # Usage
 # ---------------------------------------------------------------------------
 

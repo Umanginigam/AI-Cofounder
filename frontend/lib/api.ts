@@ -45,6 +45,26 @@ export interface Message {
   created_at?: string;
 }
 
+export interface Assumption {
+  id: number;
+  assumption: string;
+  category: string;
+  status: string;
+  evidence: string | null;
+  tested_at: string | null;
+  date: string;
+}
+
+export interface Briefing {
+  generated_at: string;
+  open_commitments: { id: number; commitment: string; deadline: string | null; created_at: string }[];
+  stale_assumptions: { id: number; assumption: string; category: string; created_at: string }[];
+  unresolved_contradictions: { id: number; old_statement: string; new_statement: string }[];
+  active_decisions_count: number;
+  untested_assumptions_count: number;
+  hard_question: string | null;
+}
+
 export const api = {
   // Onboarding
   onboardStatus: () => request<{ onboarded: boolean }>("/onboard/status"),
@@ -111,6 +131,27 @@ export const api = {
       usage: Record<string, number>;
       limits: Record<string, number>;
     }>("/usage"),
+
+  // Assumptions
+  getAssumptions: (status?: string) =>
+    request<{ assumptions: Assumption[] }>(
+      `/assumptions${status ? `?status=${status}` : ""}`
+    ),
+  getStaleAssumptions: (days = 30) =>
+    request<{ assumptions: Assumption[] }>(`/assumptions/stale?days=${days}`),
+  confirmAssumption: (id: number, evidence: string) =>
+    request(`/assumptions/${id}/confirm`, {
+      method: "POST",
+      body: JSON.stringify({ status: "confirmed", evidence }),
+    }),
+  bustAssumption: (id: number, evidence: string) =>
+    request(`/assumptions/${id}/bust`, {
+      method: "POST",
+      body: JSON.stringify({ status: "busted", evidence }),
+    }),
+
+  // Briefing
+  getBriefing: () => request<Briefing>("/briefing"),
 
   // Voice
   voiceStart: () =>

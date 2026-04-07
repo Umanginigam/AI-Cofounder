@@ -41,6 +41,9 @@ Extract the following as a JSON object. Be precise — only include things expli
   ],
   "contradictions": [
     {{"old_statement": "what was previously believed/stated", "new_statement": "what contradicts it"}}
+  ],
+  "assumptions": [
+    {{"assumption": "an unvalidated belief the founder is treating as fact", "category": "customer|market|product|revenue|technical|general"}}
   ]
 }}
 
@@ -49,6 +52,7 @@ Rules:
 - Only extract decisions that were actually MADE, not just discussed.
 - Commitments must be specific actions the founder said they WILL do.
 - Contradictions are things that conflict with the existing startup context above.
+- Assumptions are things the founder states as fact but has NOT validated with data, research, or customer conversations. Look for phrases like "I think", "probably", "should be", "our users want", "the market is" without backing evidence. Also catch implicit assumptions hidden in confident statements.
 - Return valid JSON only. If a category is empty, use an empty array.
 """
 
@@ -120,6 +124,18 @@ def extract_from_conversation(
             old_statement=contradiction["old_statement"],
             new_statement=contradiction["new_statement"],
             new_session_id=session_id,
+        )
+
+    for assumption in data.get("assumptions", []):
+        a_id = store.add_assumption(
+            session_id=session_id,
+            assumption=assumption["assumption"],
+            category=assumption.get("category", "general"),
+        )
+        vectors.add_insight_memory(
+            session_id=session_id,
+            insight_id=f"assumption_{a_id}",
+            text=f"Assumption ({assumption.get('category', 'general')}): {assumption['assumption']}",
         )
 
     return data
