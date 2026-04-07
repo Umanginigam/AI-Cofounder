@@ -9,6 +9,8 @@ An AI co-founder for solo builders — not a chatbot, but a persistent, opiniona
 - **Tracks commitments** — if you said you'd do something and didn't, it brings it up
 - **Extracts insights** — after each session, automatically pulls out decisions, commitments, and facts
 - **Available everywhere** — CLI, web dashboard, browser voice calls, and phone calls via Vapi.ai
+- **Assumption Graveyard** — Tracks unvalidated beliefs from conversations with status: untested, confirmed, or busted (with evidence).            Highlights assumptions that stay untested for 30+ days.
+- **Monday Morning Briefing** — On the dashboard, generate a briefing: open commitments, stale assumptions, unresolved contradictions, and one       AI-generated hard question for your week.
 
 ## Architecture
 
@@ -24,6 +26,8 @@ An AI co-founder for solo builders — not a chatbot, but a persistent, opiniona
 | Voice (Browser) | Web Speech API | Free |
 | Voice (Phone) | Vapi.ai | Free tier (10 min/month) |
 | Deployment | Render (backend) + Vercel (frontend) | Free tier |
+| Assumptions | SQLite `assumptions` + session extraction | Free |
+| Briefing | LLM-generated summary on demand (`GET /api/briefing`) | Uses GitHub Models quota |
 
 ## Project Structure
 
@@ -62,6 +66,7 @@ cofounder/
 │   └── components/
 │       ├── ChatMessage.tsx        # Chat bubble component
 │       └── AuthProvider.tsx       # NextAuth session provider
+│   │   ├── assumptions/page.tsx  # Assumption Graveyard
 ├── data/                          # SQLite DB + ChromaDB (auto-created, gitignored)
 ├── pyproject.toml                 # Python project config
 ├── render.yaml                    # Render.com deployment blueprint
@@ -178,6 +183,21 @@ speak naturally in short sentences. No markdown, no bullet points, no lists. Be 
 Give your actual opinion. When the founder is wrong, say so clearly. Ask hard questions.
 Challenge unvalidated assumptions. Keep responses under 3-4 sentences.
 ```
+## Assumption Graveyard
+
+After sessions end, extraction can record **assumptions** (things you treat as true without proof).
+
+- **Web:** Open `/assumptions` — filter by status, confirm or bust with evidence, see stale (30+ day) untested items.
+- **API:** `GET /api/assumptions`, `GET /api/assumptions/stale`, `POST /api/assumptions/{id}/confirm`, `POST /api/assumptions/{id}/bust`.
+
+## Monday Morning Briefing
+
+Proactive review without email (v1 is **in-app**):
+
+1. Open the **Dashboard**.
+2. Click **Monday Briefing** — the backend calls `GET /api/briefing` and returns open commitments, stale untested assumptions, unresolved contradictions, counts, and one tailored hard question.
+
+Email/push can be added later with a cron job + transactional email.
 
 ## Deployment
 
